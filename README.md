@@ -12,3 +12,6 @@ Plays random music files from local storage and controls playback via background
 - Runs in the background using `ForegroundService`.
 - Persistent Media Controls in Notification Bar.
 - Modern Android UI built using Jetpack Compose.
+
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
