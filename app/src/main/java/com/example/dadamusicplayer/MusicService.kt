@@ -17,6 +17,7 @@ class MusicService : Service() {
 
     private lateinit var mediaSession: MediaSessionCompat
     private var mediaPlayer: MediaPlayer? = null
+    private var currentTitle: String = "Dada Music Player"
 
     override fun onCreate() {
         super.onCreate()
@@ -26,8 +27,8 @@ class MusicService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action
-        val title = intent?.getStringExtra("songTitle") ?: "Dada Music Player"
-        val isPlaying = intent?.getBooleanExtra("isPlaying", true) ?: true
+        val title = intent?.getStringExtra("songTitle") ?: currentTitle
+        currentTitle = title
         val songUriString = intent?.getStringExtra("songUri")
 
         when (action) {
@@ -43,6 +44,7 @@ class MusicService : Service() {
                 mediaPlayer?.start()
             }
             "STOP" -> {
+                // Music aur Service dono ko completely close/cross karne ke liye
                 mediaPlayer?.stop()
                 mediaPlayer?.release()
                 mediaPlayer = null
@@ -52,7 +54,7 @@ class MusicService : Service() {
             }
         }
 
-        showNotification(title, mediaPlayer?.isPlaying ?: false)
+        showNotification(currentTitle, mediaPlayer?.isPlaying ?: false)
         return START_STICKY
     }
 
@@ -77,9 +79,19 @@ class MusicService : Service() {
     }
 
     private fun showNotification(title: String, isPlaying: Boolean) {
-        val intent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
+        // App open karne ke liye intent
+        val openAppIntent = Intent(this, MainActivity::class.java)
+        val pendingOpenApp = PendingIntent.getActivity(
+            this, 0, openAppIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Notification close (Cross) karne ke liye intent
+        val stopIntent = Intent(this, MusicService::class.java).apply {
+            action = "STOP"
+        }
+        val pendingStopIntent = PendingIntent.getService(
+            this, 1, stopIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -87,8 +99,10 @@ class MusicService : Service() {
             .setContentTitle(title)
             .setContentText("Dada Music Playing...")
             .setSmallIcon(android.R.drawable.ic_media_play)
-            .setContentIntent(pendingIntent)
+            .setContentIntent(pendingOpenApp)
             .setOngoing(isPlaying)
+            // Cross / Close button Notification bar me add ho gaya hai
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Close ❌", pendingStopIntent)
             .setStyle(
                 androidx.media.app.NotificationCompat.MediaStyle()
                     .setMediaSession(mediaSession.sessionToken)
