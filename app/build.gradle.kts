@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.dadamusicplayer"
-        minSdk = 24
+        minSdk = 21   // <-- J2 Pro (Android 7.1) ke liye 21 kar diya hai
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -22,11 +22,11 @@ android {
         kotlinCompilerExtensionVersion = "1.5.8"
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_1_8   // <-- J2 Pro support ke liye Java 8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "1.8"
     }
 }
 
