@@ -5,6 +5,9 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
@@ -13,6 +16,7 @@ import android.support.v4.media.session.MediaSessionCompat
 class MusicService : Service() {
 
     private lateinit var mediaSession: MediaSessionCompat
+    private var mediaPlayer: MediaPlayer? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -24,15 +28,52 @@ class MusicService : Service() {
         val action = intent?.action
         val title = intent?.getStringExtra("songTitle") ?: "Dada Music Player"
         val isPlaying = intent?.getBooleanExtra("isPlaying", true) ?: true
+        val songUriString = intent?.getStringExtra("songUri")
 
-        if (action == "STOP") {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
-            return START_NOT_STICKY
+        when (action) {
+            "PLAY_URI" -> {
+                songUriString?.let { uriStr ->
+                    playAudioUri(Uri.parse(uriStr))
+                }
+            }
+            "PAUSE" -> {
+                mediaPlayer?.pause()
+            }
+            "RESUME" -> {
+                mediaPlayer?.start()
+            }
+            "STOP" -> {
+                mediaPlayer?.stop()
+                mediaPlayer?.release()
+                mediaPlayer = null
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+                return START_NOT_STICKY
+            }
         }
 
-        showNotification(title, isPlaying)
+        showNotification(title, mediaPlayer?.isPlaying ?: false)
         return START_STICKY
+    }
+
+    private fun playAudioUri(uri: Uri) {
+        try {
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+            mediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .build()
+                )
+                setDataSource(applicationContext, uri)
+                prepare()
+                start()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun showNotification(title: String, isPlaying: Boolean) {
@@ -42,15 +83,12 @@ class MusicService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val playPauseIcon = if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play
-
         val notification = NotificationCompat.Builder(this, "CHANNEL_ID")
             .setContentTitle(title)
-            .setContentText("Playing in background")
+            .setContentText("Dada Music Playing...")
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentIntent(pendingIntent)
             .setOngoing(isPlaying)
-            .addAction(playPauseIcon, if (isPlaying) "Pause" else "Play", pendingIntent)
             .setStyle(
                 androidx.media.app.NotificationCompat.MediaStyle()
                     .setMediaSession(mediaSession.sessionToken)
@@ -72,6 +110,12 @@ class MusicService : Service() {
             val manager = getSystemService(NotificationManager::class.java)
             manager?.createNotificationChannel(channel)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaPlayer?.release()
+        mediaPlayer = null
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
