@@ -9,10 +9,10 @@ android {
 
     defaultConfig {
         applicationId = "com.example.dadamusicplayer"
-        minSdk = 21   // <-- J2 Pro (Android 7.1) ke liye 21 kar diya hai
+        minSdk = 21   // <-- J2 Pro & J4+ Support
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
     }
 
     buildFeatures {
@@ -22,7 +22,7 @@ android {
         kotlinCompilerExtensionVersion = "1.5.8"
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8   // <-- J2 Pro support ke liye Java 8
+        sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
     kotlinOptions {
@@ -37,4 +37,7 @@ dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
+    
+    // Notification & Background Playback Dependency
+    implementation("androidx.media:media:1.7.0")
 }
