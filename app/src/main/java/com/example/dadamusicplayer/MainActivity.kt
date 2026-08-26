@@ -109,10 +109,9 @@ fun MusicPlayerScreen() {
     val context = LocalContext.current
 
     val defaultPlaylist = listOf(
-        Song("295", "Sidhu Moose Wala", "4:30"),
-        Song("The Last Ride", "Sidhu Moose Wala", "4:22"),
-        Song("So High", "Sidhu Moose Wala", "3:37"),
-        Song("Legend", "Sidhu Moose Wala", "3:42")
+        Song("295 (Demo)", "Sidhu Moose Wala", "4:30"),
+        Song("The Last Ride (Demo)", "Sidhu Moose Wala", "4:22"),
+        Song("So High (Demo)", "Sidhu Moose Wala", "3:37")
     )
 
     var songList by remember { mutableStateOf(defaultPlaylist) }
@@ -139,10 +138,12 @@ fun MusicPlayerScreen() {
 
     val currentSong = songList.getOrElse(currentSongIndex) { defaultPlaylist[0] }
 
-    fun updateNotification(playing: Boolean) {
+    fun sendActionToService(action: String, uri: Uri? = null) {
         val serviceIntent = Intent(context, MusicService::class.java).apply {
+            this.action = action
             putExtra("songTitle", currentSong.title)
-            putExtra("isPlaying", playing)
+            putExtra("isPlaying", isPlaying)
+            uri?.let { putExtra("songUri", it.toString()) }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(serviceIntent)
@@ -202,7 +203,10 @@ fun MusicPlayerScreen() {
             ) {
                 IconButton(onClick = {
                     if (currentSongIndex > 0) currentSongIndex-- else currentSongIndex = songList.size - 1
-                    updateNotification(isPlaying)
+                    currentSong.contentUri?.let { uri ->
+                        isPlaying = true
+                        sendActionToService("PLAY_URI", uri)
+                    }
                 }) {
                     Text(text = "⏮️", fontSize = 28.sp)
                 }
@@ -210,7 +214,13 @@ fun MusicPlayerScreen() {
                 Button(
                     onClick = {
                         isPlaying = !isPlaying
-                        updateNotification(isPlaying)
+                        if (isPlaying) {
+                            currentSong.contentUri?.let { uri ->
+                                sendActionToService("PLAY_URI", uri)
+                            } ?: run { sendActionToService("RESUME") }
+                        } else {
+                            sendActionToService("PAUSE")
+                        }
                     },
                     modifier = Modifier.size(60.dp),
                     shape = CircleShape
@@ -220,7 +230,10 @@ fun MusicPlayerScreen() {
 
                 IconButton(onClick = {
                     if (currentSongIndex < songList.size - 1) currentSongIndex++ else currentSongIndex = 0
-                    updateNotification(isPlaying)
+                    currentSong.contentUri?.let { uri ->
+                        isPlaying = true
+                        sendActionToService("PLAY_URI", uri)
+                    }
                 }) {
                     Text(text = "⏭️", fontSize = 28.sp)
                 }
@@ -260,7 +273,9 @@ fun MusicPlayerScreen() {
                             .clickable {
                                 currentSongIndex = index
                                 isPlaying = true
-                                updateNotification(true)
+                                song.contentUri?.let { uri ->
+                                    sendActionToService("PLAY_URI", uri)
+                                }
                             },
                         colors = CardDefaults.cardColors(
                             containerColor = if (index == currentSongIndex)
