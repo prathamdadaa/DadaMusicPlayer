@@ -27,6 +27,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -35,6 +36,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
+
+// Theme Colors (Warm Soft Sand/Beige Theme)
+val VintageBackground = Color(0xFFD6C6A5)
+val SoftCardBg = Color(0xFFE4D5B7)
+val SoftInnerShadow = Color(0xFFC7B693)
+val DarkText = Color(0xFF4A3E2D)
+val MutedText = Color(0xFF7A6B56)
 
 data class Song(
     val title: String,
@@ -50,7 +58,7 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = VintageBackground
                 ) {
                     AppNavigation()
                 }
@@ -81,6 +89,7 @@ fun AppNavigation() {
     }
 }
 
+// 1. Black Splash Screen (Unchanged)
 @Composable
 fun SplashScreen() {
     Box(
@@ -103,7 +112,7 @@ fun SplashScreen() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+// 2. Vintage Soft Gold Neumorphic Music Player
 @Composable
 fun MusicPlayerScreen() {
     val context = LocalContext.current
@@ -152,164 +161,209 @@ fun MusicPlayerScreen() {
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("🎵 Dada Music Player", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            )
-        }
-    ) { paddingValues ->
-        Column(
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(VintageBackground)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Header Title
+        Text(
+            text = "DADA MUSIC PLAYER",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = DarkText,
+            letterSpacing = 1.sp
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Main Neumorphic Card Container
+        Card(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxWidth()
+                .shadow(12.dp, RoundedCornerShape(32.dp), spotColor = DarkText),
+            shape = RoundedCornerShape(32.dp),
+            colors = CardDefaults.cardColors(containerColor = SoftCardBg)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(150.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "🎶", fontSize = 60.sp)
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = currentSong.title,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = currentSong.artist,
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                IconButton(onClick = {
-                    if (currentSongIndex > 0) currentSongIndex-- else currentSongIndex = songList.size - 1
-                    currentSong.contentUri?.let { uri ->
-                        isPlaying = true
-                        sendActionToService("PLAY_URI", uri)
-                    }
-                }) {
-                    Text(text = "⏮️", fontSize = 28.sp)
-                }
-
-                Button(
-                    onClick = {
-                        isPlaying = !isPlaying
-                        if (isPlaying) {
-                            currentSong.contentUri?.let { uri ->
-                                sendActionToService("PLAY_URI", uri)
-                            } ?: run { sendActionToService("RESUME") }
-                        } else {
-                            sendActionToService("PAUSE")
-                        }
-                    },
-                    modifier = Modifier.size(60.dp),
-                    shape = CircleShape
+                // Circular Album Artwork Frame
+                Box(
+                    modifier = Modifier
+                        .size(160.dp)
+                        .clip(CircleShape)
+                        .background(SoftInnerShadow),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(text = if (isPlaying) "⏸" else "▶", fontSize = 22.sp)
+                    Text(text = "🎼", fontSize = 70.sp)
                 }
 
-                IconButton(onClick = {
-                    if (currentSongIndex < songList.size - 1) currentSongIndex++ else currentSongIndex = 0
-                    currentSong.contentUri?.let { uri ->
-                        isPlaying = true
-                        sendActionToService("PLAY_URI", uri)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Song Title & Artist
+                Text(
+                    text = currentSong.title,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkText,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = currentSong.artist,
+                    fontSize = 14.sp,
+                    color = MutedText
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Control Buttons Row (Neumorphic Soft Buttons)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Previous Button
+                    IconButton(
+                        onClick = {
+                            if (currentSongIndex > 0) currentSongIndex-- else currentSongIndex = songList.size - 1
+                            currentSong.contentUri?.let { uri ->
+                                isPlaying = true
+                                sendActionToService("PLAY_URI", uri)
+                            }
+                        },
+                        modifier = Modifier
+                            .size(54.dp)
+                            .shadow(6.dp, CircleShape)
+                            .background(SoftCardBg, CircleShape)
+                    ) {
+                        Text(text = "⏮", fontSize = 20.sp, color = DarkText)
                     }
-                }) {
-                    Text(text = "⏭️", fontSize = 28.sp)
+
+                    // Play/Pause Center Button
+                    IconButton(
+                        onClick = {
+                            isPlaying = !isPlaying
+                            if (isPlaying) {
+                                currentSong.contentUri?.let { uri ->
+                                    sendActionToService("PLAY_URI", uri)
+                                } ?: run { sendActionToService("RESUME") }
+                            } else {
+                                sendActionToService("PAUSE")
+                            }
+                        },
+                        modifier = Modifier
+                            .size(68.dp)
+                            .shadow(8.dp, CircleShape)
+                            .background(SoftCardBg, CircleShape)
+                    ) {
+                        Text(text = if (isPlaying) "⏸" else "▶", fontSize = 26.sp, color = DarkText)
+                    }
+
+                    // Next Button
+                    IconButton(
+                        onClick = {
+                            if (currentSongIndex < songList.size - 1) currentSongIndex++ else currentSongIndex = 0
+                            currentSong.contentUri?.let { uri ->
+                                isPlaying = true
+                                sendActionToService("PLAY_URI", uri)
+                            }
+                        },
+                        modifier = Modifier
+                            .size(54.dp)
+                            .shadow(6.dp, CircleShape)
+                            .background(SoftCardBg, CircleShape)
+                    ) {
+                        Text(text = "⏭", fontSize = 20.sp, color = DarkText)
+                    }
                 }
             }
+        }
 
-            Button(
-                onClick = {
-                    val hasPermission = ContextCompat.checkSelfPermission(
-                        context,
-                        permissionToRequest
-                    ) == PackageManager.PERMISSION_GRANTED
+        Spacer(modifier = Modifier.height(16.dp))
 
-                    if (hasPermission) {
-                        val localSongs = fetchAudioFiles(context)
-                        if (localSongs.isNotEmpty()) {
-                            songList = localSongs
-                            currentSongIndex = 0
-                        }
-                    } else {
-                        launcher.launch(permissionToRequest)
+        // Load Phone Songs Button
+        Button(
+            onClick = {
+                val hasPermission = ContextCompat.checkSelfPermission(
+                    context,
+                    permissionToRequest
+                ) == PackageManager.PERMISSION_GRANTED
+
+                if (hasPermission) {
+                    val localSongs = fetchAudioFiles(context)
+                    if (localSongs.isNotEmpty()) {
+                        songList = localSongs
+                        currentSongIndex = 0
                     }
-                },
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-            ) {
-                Text(text = "📁 Load Phone's Local MP3 Songs")
-            }
+                } else {
+                    launcher.launch(permissionToRequest)
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(4.dp, RoundedCornerShape(16.dp)),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = SoftCardBg)
+        ) {
+            Text(text = "📁 Load Phone's Local Songs", color = DarkText, fontWeight = FontWeight.Bold)
+        }
 
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                itemsIndexed(songList) { index, song ->
-                    Card(
+        // Song List
+        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+            itemsIndexed(songList) { index, song ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .clickable {
+                            currentSongIndex = index
+                            isPlaying = true
+                            song.contentUri?.let { uri ->
+                                sendActionToService("PLAY_URI", uri)
+                            }
+                        },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (index == currentSongIndex) SoftInnerShadow else SoftCardBg
+                    )
+                ) {
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .clickable {
-                                currentSongIndex = index
-                                isPlaying = true
-                                song.contentUri?.let { uri ->
-                                    sendActionToService("PLAY_URI", uri)
-                                }
-                            },
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (index == currentSongIndex)
-                                MaterialTheme.colorScheme.primaryContainer
-                            else
-                                MaterialTheme.colorScheme.surfaceVariant
-                        )
+                            .padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "${index + 1}. ${song.title}",
-                                    fontWeight = FontWeight.SemiBold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = song.artist,
-                                    fontSize = 12.sp,
-                                    color = Color.Gray
-                                )
-                            }
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = song.duration,
+                                text = "${index + 1}. ${song.title}",
+                                fontWeight = FontWeight.SemiBold,
+                                color = DarkText,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = song.artist,
                                 fontSize = 12.sp,
-                                color = Color.Gray
+                                color = MutedText
                             )
                         }
+                        Text(
+                            text = song.duration,
+                            fontSize = 12.sp,
+                            color = MutedText
+                        )
                     }
                 }
             }
